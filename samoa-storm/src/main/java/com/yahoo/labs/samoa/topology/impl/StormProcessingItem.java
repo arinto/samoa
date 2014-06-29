@@ -53,7 +53,7 @@ class StormProcessingItem extends AbstractProcessingItem implements StormTopolog
 	
 	//TODO: should we put parallelism hint here? 
 	//imo, parallelism hint only declared when we add this PI in the topology
-	//open for dicussion :p
+	//open for dicussion 
 		
 	StormProcessingItem(Processor processor, int parallelismHint){
 		this(processor, UUID.randomUUID().toString(), parallelismHint);
@@ -117,7 +117,7 @@ class StormProcessingItem extends AbstractProcessingItem implements StormTopolog
 		return sb.toString();
 	}
 		
-	private final static class ProcessingItemBolt extends BaseRichBolt{
+	final static class ProcessingItemBolt extends BaseRichBolt{
 		
 		private static final long serialVersionUID = -6637673741263199198L;
 		

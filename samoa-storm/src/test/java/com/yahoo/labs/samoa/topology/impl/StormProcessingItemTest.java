@@ -20,37 +20,50 @@ package com.yahoo.labs.samoa.topology.impl;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import mockit.Expectations;
 import mockit.MockUp;
 import mockit.Mocked;
 import mockit.Tested;
 import mockit.Verifications;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import backtype.storm.topology.BoltDeclarer;
 import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.TopologyBuilder;
+import backtype.storm.tuple.Fields;
 
 import com.yahoo.labs.samoa.core.Processor;
+import com.yahoo.labs.samoa.topology.impl.StormProcessingItem.ProcessingItemBolt;
+import com.yahoo.labs.samoa.topology.impl.StormStream.InputStreamId;
 
 public class StormProcessingItemTest {
-    private static final int PARRALLELISM_HINT_2 = 2;
-    private static final int PARRALLELISM_HINT_4 = 4;
+    private static final int PARALLELISM_HINT_2 = 2;
+    private static final int PARALLELISM_HINT_4 = 4;
     private static final String ID = "id";
     @Tested private StormProcessingItem pi;
+    @Mocked private StormBoltStream stormInputStream;
     @Mocked private Processor processor;
-    @Mocked private StormTopology topology;
     @Mocked private TopologyBuilder stormBuilder = new TopologyBuilder();
+    @Mocked private BoltDeclarer piBoltDeclarer;
+    @Mocked private ProcessingItemBolt piBolt;
+    @Mocked private StormTopology topology;
+
+    private final InputStreamId inputId = new InputStreamId("compId", "streamId");
 
     @Before
     public void setUp() {
-        pi = new StormProcessingItem(processor, ID, PARRALLELISM_HINT_2);
+        pi = new StormProcessingItem(processor, ID, PARALLELISM_HINT_2);
     }
 
+    @Test
+    public void testConstructor() {
+        assertSame("Processor is not same", pi.getProcessor(), processor);
+        assertEquals("Parallelism is not set correctly", pi.getParallelism(), PARALLELISM_HINT_2 ,0);
+    }
+    
     @Test
     public void testAddToTopology() {
         new Expectations() {
@@ -64,15 +77,78 @@ public class StormProcessingItemTest {
             }
         };
 
-        pi.addToTopology(topology, PARRALLELISM_HINT_4); // this parallelism hint is ignored
+        pi.addToTopology(topology, PARALLELISM_HINT_4); // this parallelism hint is ignored
 
         new Verifications() {
             {
                 assertEquals(pi.getProcessor(), processor);
                 // TODO add methods to explore a topology and verify them
-                assertEquals(pi.getParallelism(), PARRALLELISM_HINT_2);
+                assertEquals(pi.getParallelism(), PARALLELISM_HINT_2);
                 assertEquals(pi.getId(), ID);
             }
         };
+    }
+    
+    @Test
+    public void testCreateStream(){
+        new Expectations() {
+            {
+                piBolt.createStream(ID);
+            }
+        };
+        
+        pi.createStream();
+    }
+    
+//    @Test
+    public void testConnectInputShuffleStream() {   
+        StormComponentFactory scf = new StormComponentFactory();
+        StormTopology topo = (StormTopology)scf.createTopology("topoName");
+        topo.addProcessingItem(pi);
+        
+        new Expectations() {
+            {
+                stormInputStream.getInputId(); result = inputId;
+                piBoltDeclarer.shuffleGrouping(inputId.getComponentId(), 
+                        inputId.getStreamId());
+            }
+        };
+        pi.connectInputShuffleStream(stormInputStream);
+    }
+    
+//    @Test
+    public void testConnectInputKeyStream() {
+        StormComponentFactory scf = new StormComponentFactory();
+        StormTopology topo = (StormTopology) scf.createTopology("topoName");
+        topo.addProcessingItem(pi);
+
+        new Expectations() {
+            {
+                stormInputStream.getInputId(); result = inputId;
+                piBoltDeclarer.fieldsGrouping(
+                        inputId.getComponentId(), 
+                        inputId.getStreamId(), 
+                        new Fields(StormSamoaUtils.KEY_FIELD));            }
+        };
+        
+        pi.connectInputKeyStream(stormInputStream);
+    }
+    
+//    @Test
+    public void testConnectAllStream() {
+        StormComponentFactory scf = new StormComponentFactory();
+        StormTopology topo = (StormTopology) scf.createTopology("topoName");
+        topo.addProcessingItem(pi);
+
+        new Expectations() {
+            {
+                stormInputStream.getInputId(); result = inputId;
+                piBoltDeclarer.allGrouping(
+                        inputId.getComponentId(), 
+                        inputId.getStreamId());
+            }
+        };
+        
+        pi.connectInputAllStream(stormInputStream);
     }
 }

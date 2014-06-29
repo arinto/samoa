@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
-import backtype.storm.utils.Utils;
 
 import com.yahoo.labs.samoa.topology.impl.StormSamoaUtils;
 import com.yahoo.labs.samoa.topology.impl.StormTopology;
@@ -54,6 +53,7 @@ public class LocalStormDoTask {
         int numWorker = StormSamoaUtils.numWorkers(tmpArgs);
 
         args = tmpArgs.toArray(new String[0]);
+        logger.info("args: {}", args.toString());
 
         //convert the arguments into Storm topology
         StormTopology stormTopo = StormSamoaUtils.argsToTopology(args);
