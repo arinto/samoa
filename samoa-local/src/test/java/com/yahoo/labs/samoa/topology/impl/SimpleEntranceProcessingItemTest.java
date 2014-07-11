@@ -68,7 +68,7 @@ public class SimpleEntranceProcessingItemTest {
 	}
 	
 	@Test
-	public void testSetOutputStreamRepeate() {
+	public void testSetOutputStreamRepeat() {
 		entrancePi.setOutputStream(outputStream);
 		entrancePi.setOutputStream(outputStream);
 		assertSame("OutputStream is not set correctly.",outputStream,entrancePi.getOutputStream());

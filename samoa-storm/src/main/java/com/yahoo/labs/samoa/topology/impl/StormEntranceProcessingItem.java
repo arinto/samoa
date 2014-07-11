@@ -55,7 +55,11 @@ class StormEntranceProcessingItem extends AbstractEntranceProcessingItem impleme
 
     @Override
     public EntranceProcessingItem setOutputStream(Stream stream) {
-        // piSpout.streams.add(stream);
+        StormStream stormStream = (StormStream) stream;
+        if (piSpout.getOutputStream() != null && piSpout.getOutputStream() != stormStream) {
+            throw new IllegalStateException("Cannot overwrite output stream of EntranceProcessingItem");
+        }
+
         piSpout.setOutputStream((StormStream) stream);
         return this;
     }
@@ -85,6 +89,10 @@ class StormEntranceProcessingItem extends AbstractEntranceProcessingItem impleme
         StringBuilder sb = new StringBuilder(super.toString());
         sb.insert(0, String.format("id: %s, ", this.getName()));
         return sb.toString();
+    }
+    
+    StormEntranceSpout getSpout() {
+        return this.piSpout;
     }
 
     /**
