@@ -116,6 +116,10 @@ class StormProcessingItem extends AbstractProcessingItem implements StormTopolog
 		sb.insert(0, String.format("id: %s, ", this.getName()));
 		return sb.toString();
 	}
+	
+	ProcessingItemBolt getBolt() {
+	    return this.piBolt;
+	}
 		
 	final static class ProcessingItemBolt extends BaseRichBolt{
 		

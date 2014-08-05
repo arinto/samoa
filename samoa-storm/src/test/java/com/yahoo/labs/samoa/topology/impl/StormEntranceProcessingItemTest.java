@@ -55,12 +55,12 @@ public class StormEntranceProcessingItemTest {
     }
     
     @Test
-    public void testContructoWithRandomUUID() {
+    public void testContructorWithRandomUUID() {
         assertSame("EntranceProcessor is not set correctly.",entranceProcessor,stormEntrancePi.getProcessor());
     }
     
     @Test
-    public void testContructoWithFriendlyID() {
+    public void testContructorWithFriendlyID() {
         String friendlyID = "friendly";
         stormEntrancePi = new StormEntranceProcessingItem(this.entranceProcessor, friendlyID);
         assertSame("EntranceProcessor is not set correctly.",entranceProcessor,stormEntrancePi.getProcessor());
@@ -93,14 +93,6 @@ public class StormEntranceProcessingItemTest {
     }
     
     @Test
-    public void testCreateStream() {
-        String friendlyID = "friendly";
-        stormEntrancePi = new StormEntranceProcessingItem(this.entranceProcessor, friendlyID);
-        assertSame("EntranceProcessor is not set correctly.",entranceProcessor,stormEntrancePi.getProcessor());
-        assertEquals("FriendlyID is not set correctly", friendlyID, stormEntrancePi.getId());
-    }
-    
-    @Test
     public void testAddToTopology() {
         final String friendlyID = "friendly";
         stormEntrancePi = new StormEntranceProcessingItem(this.entranceProcessor, friendlyID);
@@ -113,5 +105,14 @@ public class StormEntranceProcessingItemTest {
         };
         
         stormEntrancePi.addToTopology(stormTopo, 3);
-    }    
+    }
+    
+    @Test
+    public void testCreateStream() {
+        String friendlyID = "friendly";
+        stormEntrancePi = new StormEntranceProcessingItem(this.entranceProcessor, friendlyID);
+        assertSame("EntranceProcessor is not set correctly.",entranceProcessor,stormEntrancePi.getProcessor());
+        assertEquals("FriendlyID is not set correctly", friendlyID, stormEntrancePi.getId());
+    }
+    
 }

@@ -21,5 +21,9 @@ package com.yahoo.labs.samoa.topology.impl;
  */
 
 public class StormTopologyTest {
+    
+    //TODO: 
+    //test add processing item
+    //test add entrance processing item
 
 }
