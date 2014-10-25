@@ -36,6 +36,7 @@ import com.yahoo.labs.samoa.core.Processor;
 import com.yahoo.labs.samoa.instances.Instances;
 import com.yahoo.labs.samoa.learners.AdaptiveLearner;
 import com.yahoo.labs.samoa.learners.ClassificationLearner;
+import com.yahoo.labs.samoa.learners.classifiers.trees.ActiveLearningNode.SplittingOption;
 import com.yahoo.labs.samoa.moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import com.yahoo.labs.samoa.moa.classifiers.core.attributeclassobservers.DiscreteAttributeClassObserver;
 import com.yahoo.labs.samoa.moa.classifiers.core.attributeclassobservers.NumericAttributeClassObserver;
@@ -100,7 +101,12 @@ public final class VerticalHoeffdingTree implements ClassificationLearner, Adapt
 
     public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
             "Only allow binary splits.");
-
+    
+    public FlagOption splittingOption = new FlagOption(
+            "keepInstanceWhileSplitting",
+            'k',
+            "Keep instance while splitting (without buffer)");
+    
     //TODO: (possible)
     //1. memoryEstimatedOption => for estimating model sizes
     //2. binarySplitsOption => for getting the best split suggestion, must be set in LocalStatisticsProcessor
@@ -123,11 +129,11 @@ public final class VerticalHoeffdingTree implements ClassificationLearner, Adapt
     
     private Stream computeStream;
     
-    private int parallelism;
+//    private int parallelism;
 
     @Override
     public void init(TopologyBuilder topologyBuilder, Instances dataset, int parallelism) {
-        this.parallelism = parallelism;
+//        this.parallelism = parallelism;
         
         this.filterProc = new FilterProcessor.Builder(dataset)
                 .build();
@@ -145,6 +151,7 @@ public final class VerticalHoeffdingTree implements ClassificationLearner, Adapt
                 .parallelismHint(parallelismHintOption.getValue())
                 .timeOut(timeOutOption.getValue())
                 .changeDetector(this.getChangeDetector())
+                .splittingOption(splittingOption.isSet() ? SplittingOption.KEEP_WO_BUFFER: SplittingOption.THROW_AWAY)
                 .build();
         
         topologyBuilder.addProcessor(modelAggrProc, parallelism);
