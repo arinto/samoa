@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,6 +53,7 @@ import com.yahoo.labs.samoa.moa.classifiers.core.AttributeSplitSuggestion;
 import com.yahoo.labs.samoa.moa.classifiers.core.driftdetection.ChangeDetector;
 import com.yahoo.labs.samoa.moa.classifiers.core.splitcriteria.InfoGainSplitCriterion;
 import com.yahoo.labs.samoa.moa.classifiers.core.splitcriteria.SplitCriterion;
+import com.yahoo.labs.samoa.moa.core.MiscUtils;
 import com.yahoo.labs.samoa.topology.Stream;
 
 /**
@@ -73,7 +75,8 @@ final class ModelAggregatorProcessor implements Processor {
 
 	private static final long serialVersionUID = -1685875718300564886L;
 	private static final Logger logger = LoggerFactory.getLogger(ModelAggregatorProcessor.class);
-
+	private static final Random random = new Random();
+	
 	private int processorId;
 	
 	private Node treeRoot;
@@ -378,7 +381,7 @@ final class ModelAggregatorProcessor implements Processor {
     protected FoundNode[] findNodes() {
         List<FoundNode> foundList = new LinkedList<>();
         findNodes(this.treeRoot, null, -1, foundList);
-  return foundList.toArray(new FoundNode[foundList.size()]);
+        return foundList.toArray(new FoundNode[foundList.size()]);
     }
 
     protected void findNodes(Node node, SplitNode parent,
@@ -457,9 +460,11 @@ final class ModelAggregatorProcessor implements Processor {
         Node leafNode = foundNode.getNode();
 
         if (leafNode == null) {
+            logger.debug("leafNode is null, create a new learning node");
             leafNode = newLearningNode(this.parallelismHint);
             foundNode.getParent().setChild(foundNode.getParentBranch(),
                     leafNode);
+            foundNode = new FoundNode(leafNode, foundNode.getParent(), foundNode.getParentBranch());
             activeLeafNodeCount++;
         }
 
@@ -587,12 +592,31 @@ final class ModelAggregatorProcessor implements Processor {
 					parent.setChild(parentBranch, newSplit);
 				}
 				
-				//if keep w buffer
-				if(splittingOption == SplittingOption.KEEP && this.maxBufferSize > 0) {
+				//if not throw away
+				if(splittingOption != SplittingOption.THROW_AWAY && this.maxBufferSize > 0) {
 				    Queue<Instance> buffer = node.getBuffer();
-				    logger.debug("node: {}. split is happening, there are {} items in buffer", activeLearningNode.getId(), buffer.size());
+				    int bufferSize = buffer.size();
+				    long seenInstancesWhileSplitting = activeLearningNode.getSeenInstanceWhileSplitting();
+				    double ratio = seenInstancesWhileSplitting/(double)bufferSize;
+				    logger.debug("node: {}. split is happening, there are {} items in buffer, ratio: {}", activeLearningNode.getId(), bufferSize, ratio);
 				    while(!buffer.isEmpty()) {
-				        this.trainOnInstanceImpl(buffer.poll());
+				        Instance trainInst = buffer.poll();
+				        switch(splittingOption) {
+				            case KEEP:
+				                this.trainOnInstanceImpl(trainInst);
+				                break;
+				            case POISSON:
+				                int k = MiscUtils.poisson(ratio, random);
+				                logger.debug("weight: {}", k);
+				                if (k > 0) {         
+				                    Instance weightedInst = (Instance) trainInst.copy();
+				                    weightedInst.setWeight(trainInst.weight() * k);
+				                    this.trainOnInstanceImpl(weightedInst);
+				                }
+				                break;
+				            default:
+				                logger.error("Invalid splitting option while procssing buffred instances");
+				        }
 				    }
 				    logger.debug("node: {}. use all buffered instance for training. Buffer size: {}", activeLearningNode.getId(), buffer.size());
 				} 
