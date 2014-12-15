@@ -201,7 +201,7 @@ final class ModelAggregatorProcessor implements Processor {
 					this.continueAttemptToSplit(activeLearningNode,
 							splittingNodeInfo.foundNode);
 				} else {
-                    logger.debug("node: {}. NOT all suggestions are collected!", activeLearningNode.getId());
+//                    logger.debug("node: {}. NOT all suggestions are collected!", activeLearningNode.getId());
 				}
 				
 				
@@ -566,7 +566,14 @@ final class ModelAggregatorProcessor implements Processor {
 		int parentBranch = foundNode.getParentBranch();
 		
 		//split if the Hoeffding bound condition is satisfied
-		logger.debug("node: {}. shouldSplit: {}", activeLearningNode.getId(), shouldSplit);
+		long seenInstancesWhileSplitting = node.getSeenInstanceWhileSplitting();
+		long bufferSize = node.getBuffer() == null? 0 : node.getBuffer().size();
+		long lostInstance = seenInstancesWhileSplitting - bufferSize;
+        logger.debug(
+                "node: {}, shouldSplit: {}, seenInstancesWhileSplitting: {}, bufferSize: {}, lostInstance: {}",
+                activeLearningNode.getId(), shouldSplit,
+                seenInstancesWhileSplitting, bufferSize, 
+                shouldSplit || (splittingOption == SplittingOption.THROW_AWAY)? lostInstance : 0);
 		if(shouldSplit){
 			AttributeSplitSuggestion splitDecision = bestSuggestion;
 			
@@ -577,6 +584,7 @@ final class ModelAggregatorProcessor implements Processor {
 			}else{
 				SplitNode newSplit = new SplitNode(splitDecision.splitTest, node.getObservedClassDistribution());
 				
+		        logger.debug("node: {}. numSplit: {}", activeLearningNode.getId(), splitDecision.numSplits());
 				for(int i = 0; i < splitDecision.numSplits(); i++){
 					Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i), this.parallelismHint);
 					newSplit.setChild(i, newChild);
@@ -597,8 +605,6 @@ final class ModelAggregatorProcessor implements Processor {
 				    Queue<Instance> buffer = node.getBuffer();
 				    double ratio = 1;
 				    if(!buffer.isEmpty()) {
-    				    int bufferSize = buffer.size();
-    				    long seenInstancesWhileSplitting = activeLearningNode.getSeenInstanceWhileSplitting();
     				    ratio = seenInstancesWhileSplitting/(double)bufferSize;
                         logger.debug("node: {}. split is happening, seen instance: {}, there are {} items in buffer, ratio: {}", 
                                 activeLearningNode.getId(), seenInstancesWhileSplitting, bufferSize, ratio);
@@ -612,7 +618,7 @@ final class ModelAggregatorProcessor implements Processor {
 				                break;
 				            case POISSON:
 				                int k = MiscUtils.poisson(ratio, random);
-				                logger.debug("weight: {}", k);
+//				                logger.debug("weight: {}", k);
 				                if (k > 0) {         
 				                    Instance weightedInst = (Instance) trainInst.copy();
 				                    weightedInst.setWeight(trainInst.weight() * k);
